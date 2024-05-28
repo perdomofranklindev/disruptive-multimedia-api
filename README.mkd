@@ -1,10 +1,46 @@
 # Disruptive Multimedia API
 
-Node v20.13.0 (npm v10.5.2)
+This project utilizes the Disruptive Multimedia API to provide a robust and scalable service. Below you will find the details to set up and run the project.
 
-# Stack
+## Prerequisites
 
-- Prisma.
-- Mongodb.
-- Node Express.
-- Docker.
+- Node.js v20.13.0
+- npm v10.5.2
+
+Ensure that you have the above versions of Node.js and npm installed on your system to avoid compatibility issues.
+
+## Technology Stack
+
+- **Prisma**: An open-source database toolkit that makes it easy to reason about your database and how you access it.
+- **MongoDB**: A NoSQL database that offers high performance, high availability, and easy scalability.
+- **Node Express**: A minimal and flexible Node.js web application framework that provides a robust set of features for web and mobile applications.
+- **Docker**: A platform for developing, shipping, and running applications inside lightweight containers.
+
+## Installation and Setup
+
+1. **Clean Install Dependencies**:
+   Run the following command to install all the necessary dependencies in a clean slate:
+
+   ```bash
+    npm run clean:install
+   ```
+
+2. **Start Docker Containers**: Use Docker Compose to build and start the services defined in your `docker-compose.yml` file:
+
+   ```bash
+    docker-compose up
+   ```
+
+3. **Initialize Prisma**:
+   Push the Prisma schema to your database with this command:
+
+   ```bash
+    npx prisma db push
+   ```
+
+4. **Run the Development Server**:
+   Start the development server with the following command:
+
+   ```bash
+    npm run dev
+   ```

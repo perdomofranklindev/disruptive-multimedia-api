@@ -14,6 +14,7 @@ module.exports = {
 	],
 	rules: {
 		'prettier/prettier': 'error',
-		'@typescript-eslint/no-floating-promises': 0
+		'@typescript-eslint/no-floating-promises': 0,
+		"@typescript-eslint/no-misused-promises": 0,
 	}
 };
