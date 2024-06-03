@@ -1,6 +1,5 @@
 {
 	"compilerOptions": {
-		"baseUrl": "./",
 		"target": "es2018",
 		"module": "commonjs",
 		"lib": [
@@ -30,6 +29,6 @@
 		"declaration": true,
 		"moduleResolution": "node"
 	},
-	"include": ["./"],
+	"include": ["src"],
 	"exclude": ["node_modules"]
 }
