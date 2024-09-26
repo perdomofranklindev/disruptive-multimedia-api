@@ -4,8 +4,8 @@ This project utilizes the Disruptive Multimedia API to provide a robust and scal
 
 ## Prerequisites
 
-- Node.js v20.13.0
-- npm v10.5.2
+1. Node.js v20.13.0
+2. npm v10.5.2
 
 ## Technology Stack
 
@@ -34,3 +34,7 @@ Run the app.
 ```bash
    npm run dev
 ```
+
+## If you want to run Mongo DB locally on Linux
+
+[Here the repository](https://github.com/perdomofranklindev/dockerized-mogondb)
