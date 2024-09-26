@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider      = "prisma-client-js"
   binaryTargets = ["native", "darwin", "debian-openssl-1.1.x"]
@@ -14,13 +8,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum PermissionType {
-  READ
-  CREATE
-  UPDATE
-  DELETE
-}
-
 model User {
   id        String    @id @default(auto()) @map("_id") @db.ObjectId
   username  String    @unique
@@ -29,7 +16,7 @@ model User {
   role      Role      @relation(fields: [roleId], references: [id])
   roleId    String    @db.ObjectId
   sessions  Session[]
-  Content   Content[]
+  Contents  Content[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 }
@@ -48,9 +35,9 @@ model Role {
 model Session {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   token     String   @unique
-  expiresAt DateTime
   user      User?    @relation(fields: [userId], references: [id])
   userId    String?  @db.ObjectId
+  expiredAt DateTime
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -65,18 +52,18 @@ model Theme {
 }
 
 model Content {
-  id              String            @id @default(auto()) @map("_id") @db.ObjectId
-  name            String            @unique
-  description     String?
-  thumbnail       String?
-  theme           Theme?            @relation(fields: [themeId], references: [id])
-  themeId         String?           @db.ObjectId
-  permissions     PermissionType[]
-  contentCategory ContentCategory[]
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  userId          String            @db.ObjectId
-  createdBy       User              @relation(fields: [userId], references: [id])
+  id                String            @id @default(auto()) @map("_id") @db.ObjectId
+  name              String            @unique
+  description       String?
+  thumbnail         String?
+  theme             Theme?            @relation(fields: [themeId], references: [id])
+  themeId           String?           @db.ObjectId
+  permissions       PermissionType[]
+  contentCategories ContentCategory[]
+  userId            String            @db.ObjectId
+  createdBy         User              @relation(fields: [userId], references: [id])
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
 }
 
 model ContentCategory {
@@ -91,15 +78,30 @@ model ContentCategory {
 }
 
 model Category {
-  id              String            @id @default(auto()) @map("_id") @db.ObjectId
-  name            String            @unique
-  permissions     PermissionType[]
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  ContentCategory ContentCategory[]
+  id                String            @id @default(auto()) @map("_id") @db.ObjectId
+  name              String            @unique
+  permissions       PermissionType[]
+  ContentCategories ContentCategory[]
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
 }
 
 model Task {
-  id   String @id @default(auto()) @map("_id") @db.ObjectId
-  name String @unique
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum PermissionType {
+  READ
+  CREATE
+  UPDATE
+  DELETE
+}
+
+enum RoleType {
+  READER
+  CREATOR
+  ADMINISTRATOR
 }
