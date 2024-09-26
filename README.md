@@ -35,6 +35,6 @@ Run the app.
    npm run dev
 ```
 
-## If you want to run Mongo DB locally on Linux
+## If you want to run MongoDB locally on Linux
 
 [Here the repository](https://github.com/perdomofranklindev/dockerized-mogondb)
