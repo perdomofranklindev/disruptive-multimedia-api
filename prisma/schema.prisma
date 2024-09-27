@@ -24,8 +24,8 @@ model User {
 model Role {
   id          String           @id @default(auto()) @map("_id") @db.ObjectId
   name        String           @unique
-  label       String?
-  note        String?
+  title       String?
+  description String?
   permissions PermissionType[]
   users       User[]
   createdAt   DateTime         @default(now())
@@ -104,4 +104,12 @@ enum RoleType {
   READER
   CREATOR
   ADMINISTRATOR
+}
+
+enum CategoryType {
+  TEXT
+  IMAGE
+  URL
+  FILE
+  VIDEO
 }
