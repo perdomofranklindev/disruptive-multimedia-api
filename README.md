@@ -35,6 +35,10 @@ Run the app.
    npm run dev
 ```
 
+## Note
+
+To run Prisma with MongoDB you're going to need setup replica set.
+
 ## If you want to run MongoDB locally on Linux
 
 [Here the repository](https://github.com/perdomofranklindev/dockerized-mogondb)
