@@ -3,6 +3,13 @@ generator client {
   binaryTargets = ["native", "darwin", "debian-openssl-1.1.x"]
 }
 
+generator typescriptInterfaces {
+  provider  = "prisma-generator-typescript-interfaces"
+  output    = "../src/shared/types/generated.ts"
+  modelType = "interface"
+  enumType  = "enum"
+}
+
 datasource db {
   provider = "mongodb"
   url      = env("DATABASE_URL")
