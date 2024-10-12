@@ -1,11 +1,11 @@
-// import { PORT } from './shared/constants';
 import express, { Express } from 'express';
-import userRoutes from './modules/auth/auth-route';
+import authRoutes from './modules/auth/auth-route';
+import { PORT } from './shared/environment';
 
 const app: Express = express();
 
-app.use('/api', userRoutes);
+app.use('/api', authRoutes);
 
-app.listen(3000, function () {
-	console.log(`🚀 Server ready on port ${3000}`);
+app.listen(PORT, function () {
+	console.log(`🚀 Server ready on port ${PORT}`);
 });

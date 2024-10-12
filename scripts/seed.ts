@@ -3,7 +3,7 @@ import { PermissionType, RoleType } from '../src/shared/types/generated';
 
 const main = async () => {
 	// Create the roles.
-	await PRISMA.role.createMany({
+	const creationRolesResponse = await PRISMA.role.createMany({
 		data: [
 			{
 				name: RoleType.ADMINISTRATOR,
@@ -14,10 +14,12 @@ const main = async () => {
 					PermissionType.DELETE
 				]
 			},
-			{ name: 'CREATOR', permissions: [] },
-			{ name: 'READER', permissions: [] }
+			{ name: RoleType.CREATOR, permissions: [] },
+			{ name: RoleType.READER, permissions: [] }
 		]
 	});
+
+	console.log('Roles created: ', JSON.stringify(creationRolesResponse));
 };
 
 main();
