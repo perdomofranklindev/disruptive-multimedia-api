@@ -1,45 +1,68 @@
+import express, { NextFunction, Request, Response, Router } from 'express';
 import bcrypt from 'bcrypt';
-import express, { Request, Response, Router } from 'express';
 import { User } from '@prisma/client';
 import { PRISMA } from '../../shared/prisma-singleton';
+import { SALT_ROUNDS } from '../../shared/environment';
+import { SignUpSchema } from './auth-validation';
 
 const router: Router = express.Router();
 
-router.post('/sign-up', async (req: Request, res: Response) => {
+const validateRequestBody = (
+	req: Request,
+	res: Response,
+	next: NextFunction
+) => {
 	if (typeof req.body === 'undefined') {
 		return res.status(400).json({
 			message: 'Request body is required'
 		});
 	}
 
-	const { username, email, password, roleId } = req.body as User;
+	next();
+};
 
-	// Encrypt the password
-	const saltRounds = 10;
-	const hashedPassword = await bcrypt.hash(password, saltRounds);
+router.post(
+	'/sign-up',
+	validateRequestBody,
+	async (req: Request, res: Response) => {
+		const { username, email, password, roleId } = req.body as User;
 
-	try {
-		const newUser = await PRISMA.user.create({
-			data: {
+		try {
+			SignUpSchema.parse({
 				username,
 				email,
-				password: hashedPassword,
-				role: {
-					connect: {
-						id: roleId
+				password,
+				roleId
+			});
+		} catch (error) {
+			res.status(400).json({ message: 'message' });
+		}
+
+		const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+
+		try {
+			const newUser = await PRISMA.user.create({
+				data: {
+					username,
+					email,
+					password: hashedPassword,
+					role: {
+						connect: {
+							id: roleId
+						}
 					}
 				}
-			}
-		});
-		res.status(201).json({
-			id: newUser.id,
-			username: newUser.username,
-			email: newUser.email
-		});
-	} catch (error) {
-		res.status(400).json(error);
+			});
+			res.status(201).json({
+				id: newUser.id,
+				username: newUser.username,
+				email: newUser.email
+			});
+		} catch (error) {
+			res.status(400).json(error);
+		}
 	}
-});
+);
 
 // router.post('/sign-in', (req: Request, res: Response) => {
 // 	res.status(200).json({

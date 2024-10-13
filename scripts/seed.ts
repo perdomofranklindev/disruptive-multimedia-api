@@ -14,8 +14,15 @@ const main = async () => {
 					PermissionType.DELETE
 				]
 			},
-			{ name: RoleType.CREATOR, permissions: [] },
-			{ name: RoleType.READER, permissions: [] }
+			{
+				name: RoleType.CREATOR,
+				permissions: [
+					PermissionType.CREATE,
+					PermissionType.READ,
+					PermissionType.UPDATE
+				]
+			},
+			{ name: RoleType.READER, permissions: [PermissionType.READ] }
 		]
 	});
 
