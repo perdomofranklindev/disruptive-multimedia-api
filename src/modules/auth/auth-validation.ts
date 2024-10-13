@@ -15,5 +15,15 @@ export const SignUpSchema = z.object({
 		.email('Please enter a valid email address')
 		.transform((val) => val.toLowerCase()),
 	password: z.string().min(8, 'Password must be at least 8 characters long'),
-	roleId: z.string().min(1, 'Role ID is required')
+	roleId: z
+		.string()
+		.min(1, 'Role ID is required')
+		.optional()
+		.refine((val) => val !== undefined, 'Role ID is required')
+});
+
+export const SignInSchema = z.object({
+	email: z.string().email(),
+	username: z.string(),
+	password: z.string()
 });

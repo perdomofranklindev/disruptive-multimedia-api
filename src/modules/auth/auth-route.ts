@@ -1,3 +1,4 @@
+/* eslint-disable */
 import express, { Request, Response, Router } from 'express';
 import bcrypt from 'bcrypt';
 import { User } from '@prisma/client';
@@ -14,19 +15,12 @@ router.post(
 	'/sign-up',
 	validateRequestBody,
 	async (req: Request, res: Response) => {
-		const { username, email, password, roleId } = req.body as User;
+		const user = req.body as User;
 
 		// Schema validation.
 
 		const validationSchemaError = (
-			await handleTryCatch(
-				SignUpSchema.parseAsync({
-					username,
-					email,
-					password,
-					roleId
-				})
-			)
+			await handleTryCatch(SignUpSchema.parseAsync(user))
 		)[1];
 
 		if (validationSchemaError) {
@@ -38,6 +32,8 @@ router.post(
 				res.status(400).json({ message: 'Unexpected error' });
 			}
 		}
+
+		const { email, username, password, roleId } = user;
 
 		// User exists.
 
@@ -53,6 +49,24 @@ router.post(
 		if (userExists) {
 			res.status(400).json({
 				message: 'User already exists'
+			});
+		}
+
+		// Valid role
+
+		const roleDoesNotExist = (
+			await handleTryCatch(
+				PRISMA.role.findUnique({
+					where: {
+						id: roleId
+					}
+				})
+			)
+		)[1];
+
+		if (roleDoesNotExist) {
+			res.status(400).json({
+				message: 'Role does not exist'
 			});
 		}
 
@@ -87,11 +101,15 @@ router.post(
 	}
 );
 
-// router.post('/sign-in', (req: Request, res: Response) => {
-// 	res.status(200).json({
-// 		message: 'Sign in successfully'
-// 	});
-// });
+router.post('/sign-in', (req: Request, res: Response) => {
+
+	
+
+
+	res.status(200).json({
+		message: 'Sign in successfully'
+	});
+});
 
 // router.post('/sign-out', (req: Request, res: Response) => {});
 
