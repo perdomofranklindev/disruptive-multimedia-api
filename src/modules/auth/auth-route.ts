@@ -1,25 +1,14 @@
-import express, { NextFunction, Request, Response, Router } from 'express';
+import express, { Request, Response, Router } from 'express';
 import bcrypt from 'bcrypt';
 import { User } from '@prisma/client';
 import { PRISMA } from '../../shared/prisma-singleton';
 import { SALT_ROUNDS } from '../../shared/environment';
 import { SignUpSchema } from './auth-validation';
+import { validateRequestBody } from '../../shared/middlewares';
+import { ZodError } from 'zod';
+import { handleTryCatch } from '../../shared/utils';
 
 const router: Router = express.Router();
-
-const validateRequestBody = (
-	req: Request,
-	res: Response,
-	next: NextFunction
-) => {
-	if (typeof req.body === 'undefined') {
-		return res.status(400).json({
-			message: 'Request body is required'
-		});
-	}
-
-	next();
-};
 
 router.post(
 	'/sign-up',
@@ -27,21 +16,52 @@ router.post(
 	async (req: Request, res: Response) => {
 		const { username, email, password, roleId } = req.body as User;
 
-		try {
-			SignUpSchema.parse({
-				username,
-				email,
-				password,
-				roleId
-			});
-		} catch (error) {
-			res.status(400).json({ message: 'message' });
+		// Schema validation.
+
+		const validationSchemaError = (
+			await handleTryCatch(
+				SignUpSchema.parseAsync({
+					username,
+					email,
+					password,
+					roleId
+				})
+			)
+		)[1];
+
+		if (validationSchemaError) {
+			if (validationSchemaError instanceof ZodError) {
+				validationSchemaError.errors.forEach((issue) => {
+					res.status(400).json({ message: issue.message });
+				});
+			} else {
+				res.status(400).json({ message: 'Unexpected error' });
+			}
 		}
+
+		// User exists.
+
+		const userExists = Boolean(
+			await PRISMA.user.findUnique({
+				where: {
+					email,
+					username
+				}
+			})
+		);
+
+		if (userExists) {
+			res.status(400).json({
+				message: 'User already exists'
+			});
+		}
+
+		// Creation
 
 		const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
 
-		try {
-			const newUser = await PRISMA.user.create({
+		const [newUser, createUserError] = await handleTryCatch(
+			PRISMA.user.create({
 				data: {
 					username,
 					email,
@@ -52,15 +72,18 @@ router.post(
 						}
 					}
 				}
-			});
-			res.status(201).json({
-				id: newUser.id,
-				username: newUser.username,
-				email: newUser.email
-			});
-		} catch (error) {
-			res.status(400).json(error);
+			})
+		);
+
+		if (createUserError) {
+			res.status(400).json({ message: 'Unexpected error' });
 		}
+
+		res.status(201).json({
+			id: newUser?.id,
+			username: newUser?.username,
+			email: newUser?.email
+		});
 	}
 );
 
