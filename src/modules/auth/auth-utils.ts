@@ -16,6 +16,11 @@ type ValidatePasswordParams = {
 	currentPassword: string;
 	incomingPassword: string;
 };
+type FindUserReturn = {
+	username: string;
+	email: string;
+	password: string;
+} | null;
 
 export class AuthUtils {
 	/**
@@ -124,9 +129,12 @@ export class AuthUtils {
 	 * @param {string} params.email - User email.
 	 * @param {string} params.username - User username.
 	 * @throws {Error} - If neither email nor username are provided.
-	 * @returns {*} - User data.
+	 * @returns {Promise<FindUserReturn>} - User data.
 	 */
-	static async findUser({ email, username }: UserSearchParams) {
+	static async findUser({
+		email,
+		username
+	}: UserSearchParams): Promise<FindUserReturn> {
 		if (!email && !username) {
 			throw new Error('Either email or username must be provided.');
 		}
