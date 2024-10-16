@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 const usernameSchema = z
-	.string()
+	.string({ message: 'Username required' })
 	.min(3, 'Username must be at least 3 characters long')
 	.max(20, 'Username cannot exceed 20 characters')
 	.regex(
@@ -11,12 +11,12 @@ const usernameSchema = z
 	.transform((val) => val.toLowerCase());
 
 const emailSchema = z
-	.string()
+	.string({ message: 'Email required' })
 	.email('Please enter a valid email address')
 	.transform((val) => val.toLowerCase());
 
 const passwordSchema = z
-	.string()
+	.string({ message: 'Password required' })
 	.min(8, 'Password must be at least 8 characters long');
 
 export const SignUpSchema = z.object({
@@ -24,10 +24,10 @@ export const SignUpSchema = z.object({
 	email: emailSchema,
 	password: passwordSchema,
 	roleId: z
-		.string()
+		.string({
+			message: 'Role ID is required'
+		})
 		.min(1, 'Role ID is required')
-		.optional()
-		.refine((val) => val !== undefined, 'Role ID is required')
 });
 
 export const SignInSchema = z

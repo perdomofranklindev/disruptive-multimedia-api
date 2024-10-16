@@ -1,7 +1,7 @@
 import { ZodError } from 'zod';
 import { User } from '../../shared/types/generated';
 import { handleTryCatch } from '../../shared/utils';
-import { SignUpSchema } from './auth-schemas';
+import { SignInSchema, SignUpSchema } from './auth-schemas';
 import { PRISMA } from '../../shared/prisma-singleton';
 import { JWT_SECRET, SALT_ROUNDS } from '../../shared/environment';
 import bcrypt from 'bcrypt';
@@ -28,7 +28,7 @@ export class AuthUtils {
 	 * @param {User} user - User.
 	 * @returns {Promise<ZodError>} - Validation schema errors.
 	 */
-	static async validateSignUpSchema(user: User): Promise<ZodError> {
+	static async validateSignUpSchema(user: User): Promise<ZodError | null> {
 		const validationSchemaError = (
 			await handleTryCatch(SignUpSchema.parseAsync(user))
 		)[1];
@@ -52,14 +52,16 @@ export class AuthUtils {
 			throw new Error('Either email or username must be provided.');
 		}
 
-		return Boolean(
-			await PRISMA.user.findUnique({
+		const [user] = await handleTryCatch(
+			PRISMA.user.findUnique({
 				where: {
 					email,
 					username
 				}
 			})
 		);
+
+		return Boolean(user);
 	}
 
 	/**
@@ -68,13 +70,15 @@ export class AuthUtils {
 	 * @returns {Promise<boolean>} - Role exists.
 	 */
 	static async roleExists(roleId: string): Promise<boolean> {
-		return Boolean(
-			await PRISMA.role.findUnique({
+		const [role] = await handleTryCatch(
+			PRISMA.role.findUnique({
 				where: {
 					id: roleId
 				}
 			})
 		);
+
+		return Boolean(role);
 	}
 
 	/**
@@ -113,11 +117,11 @@ export class AuthUtils {
 	/**
 	 * @description - Validates the sign in schema.
 	 * @param {User} user - User.
-	 * @returns {Promise<ZodError>} - Validation schema errors.
+	 * @returns {Promise<ZodError | null>} - Validation schema errors.
 	 */
-	static async validateSignInSchema(user: User) {
+	static async validateSignInSchema(user: User): Promise<ZodError | null> {
 		const validationSchemaError = (
-			await handleTryCatch(SignUpSchema.parseAsync(user))
+			await handleTryCatch(SignInSchema.parseAsync(user))
 		)[1];
 
 		return validationSchemaError as ZodError;
@@ -163,7 +167,7 @@ export class AuthUtils {
 		currentPassword,
 		incomingPassword
 	}: ValidatePasswordParams) {
-		return bcrypt.compareSync(currentPassword, String(incomingPassword));
+		return bcrypt.compareSync(String(incomingPassword), currentPassword);
 	}
 
 	/**
