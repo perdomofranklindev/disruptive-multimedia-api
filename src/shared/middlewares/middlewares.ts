@@ -45,3 +45,32 @@ export const authorizationMiddleware = (
 	res: Response,
 	next: NextFunction
 ) => _authorizationMiddleware(req as RequestWithSession, res, next);
+
+// function verifyToken(req, res, next) {
+//     const accessToken = req.cookies.accessToken;
+//     const refreshToken = req.cookies.refreshToken;
+
+//     if (!accessToken || !refreshToken) {
+//         return res.status(401).send('Access token or refresh token is missing');
+//     }
+
+//     try {
+//         const decodedAccessToken = jwt.verify(accessToken, 'yourSecretKey');
+//         const decodedRefreshToken = jwt.verify(refreshToken, 'yourSecretKey');
+
+//         if (decodedAccessToken.id !== decodedRefreshToken.id) {
+//             return res.status(401).send('Token mismatch');
+//         }
+
+//         req.user = decodedAccessToken;
+//         next();
+//     } catch (error) {
+//         if (error.name === 'TokenExpiredError') {
+//             // Handle token expiration
+//             const newAccessToken = jwt.sign({ id: decodedRefreshToken.id }, 'yourSecretKey', { expiresIn: '1h' });
+//             res.cookie('accessToken', newAccessToken, { httpOnly: true, maxAge: 3600 * 1000 });
+//             return res.status(200).send('Access token refreshed');
+//         }
+//         return res.status(401).send('Invalid token');
+//     }
+// }

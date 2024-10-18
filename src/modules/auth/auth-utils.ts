@@ -3,7 +3,11 @@ import { User } from '../../shared/types/generated';
 import { handleTryCatch } from '../../shared/utils';
 import { SignInSchema, SignUpSchema } from './auth-schemas';
 import { PRISMA } from '../../shared/prisma-singleton';
-import { JWT_SECRET, SALT_ROUNDS } from '../../shared/environment';
+import {
+	JWT_SECRET,
+	REFRESH_JWT_SECRET,
+	SALT_ROUNDS
+} from '../../shared/environment';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
@@ -17,6 +21,7 @@ type ValidatePasswordParams = {
 	incomingPassword: string;
 };
 type FindUserReturn = {
+	id: string;
 	username: string;
 	email: string;
 	password: string;
@@ -149,6 +154,7 @@ export class AuthUtils {
 				username
 			},
 			select: {
+				id: true,
 				email: true,
 				username: true,
 				password: true
@@ -178,6 +184,12 @@ export class AuthUtils {
 	static generateToken(user: Partial<User>): string {
 		return jwt.sign({ ...user }, JWT_SECRET, {
 			expiresIn: '1h'
+		});
+	}
+
+	static generateRefreshToken(user: Partial<User>): string {
+		return jwt.sign({ ...user }, REFRESH_JWT_SECRET, {
+			expiresIn: '7d'
 		});
 	}
 

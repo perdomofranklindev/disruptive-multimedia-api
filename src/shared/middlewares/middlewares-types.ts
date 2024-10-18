@@ -3,6 +3,7 @@ import { User } from '../types/generated';
 
 export interface Cookies {
 	access_token: string;
+	refresh_access_token: string;
 }
 
 export interface MiddlewareSession {

@@ -63,6 +63,8 @@ router.post('/sign-up', async (request: Request, response: Response) => {
 router.post('/sign-in', async (request: Request, response: Response) => {
 	const data = request.body as User;
 
+	// Validate the user.
+
 	const validatedSchema = await AuthUtils.validateSignInSchema(data);
 
 	if (validatedSchema?.errors?.length) {
@@ -102,25 +104,45 @@ router.post('/sign-in', async (request: Request, response: Response) => {
 		});
 	}
 
-	const token = AuthUtils.generateToken({ username, email });
+	// Generate tokens.
 
-	response
-		.status(200)
-		.cookie('access_token', token, {
-			httpOnly: true,
-			secure: ENVIRONMENT === 'production',
-			sameSite: 'strict',
-			maxAge: 1000 * 60 * 60
-		})
-		.json({
-			email: user?.email,
-			username: user?.username,
-			token
-		});
+	const token = AuthUtils.generateToken({
+		id: user?.id,
+		username,
+		email
+	});
+	const refreshToken = AuthUtils.generateRefreshToken({
+		id: user?.id,
+		username,
+		email
+	});
+
+	const oneHour = 1000 * 60 * 60;
+	const oneDay = oneHour * 24;
+	const sevenDays = oneDay * 7;
+
+	response.cookie('access_token', token, {
+		httpOnly: true,
+		secure: ENVIRONMENT === 'production',
+		sameSite: 'strict',
+		maxAge: oneHour
+	});
+	response.cookie('refresh_access_token', refreshToken, {
+		httpOnly: true,
+		secure: ENVIRONMENT === 'production',
+		sameSite: 'strict',
+		maxAge: sevenDays
+	});
+
+	response.status(200).json({
+		...user
+	});
 });
 
 router.post('/sign-out', (request: Request, response: Response) => {
-	response.clearCookie('access_token').json({ message: 'Logout successful' });
+	response.clearCookie('access_token');
+	response.clearCookie('refresh_access_token');
+	response.status(200).json({ message: 'Logout successful' });
 });
 
 router.post(
