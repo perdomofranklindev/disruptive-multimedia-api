@@ -4,16 +4,13 @@ import authRoutes from './modules/auth/auth-routes';
 import roleRoutes from './modules/role/role-routes';
 import { PORT } from './shared/environment';
 import { prepareUserSessionMiddleware } from './shared/middlewares/middlewares';
-import { RequestWithSession } from './shared/middlewares/middlewares-types';
 
 const app: Express = express();
 
 app.use(express.json());
 // eslint-disable-next-line
 app.use(cookieParser());
-app.use((req, res, next) =>
-	prepareUserSessionMiddleware(req as RequestWithSession, res, next)
-);
+app.use(prepareUserSessionMiddleware);
 
 app.use('/api', authRoutes);
 app.use('/api', roleRoutes);

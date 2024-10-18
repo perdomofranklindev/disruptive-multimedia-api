@@ -40,3 +40,7 @@ export const SignInSchema = z
 		message: 'Either username or email must be provided',
 		path: ['username', 'email'] // This ensures the error appears on either field
 	});
+
+export const ChangePasswordSchema = z.object({
+	password: passwordSchema
+});

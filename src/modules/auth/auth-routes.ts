@@ -2,6 +2,11 @@ import express, { Request, Response, Router } from 'express';
 import { User } from '@prisma/client';
 import { AuthUtils } from './auth-utils';
 import { ENVIRONMENT } from '../../shared/environment';
+import { authorizationMiddleware } from '../../shared/middlewares/middlewares';
+import { handleTryCatch } from '../../shared/utils';
+import { ChangePasswordSchema } from './auth-schemas';
+import { ZodError } from 'zod';
+import { RequestWithSession } from '../../shared/middlewares/middlewares-types';
 
 const router: Router = express.Router();
 
@@ -114,8 +119,41 @@ router.post('/sign-in', async (request: Request, response: Response) => {
 		});
 });
 
-// router.post('/sign-out', (request: Request, response: Response) => {});
+router.post('/sign-out', (request: Request, response: Response) => {
+	response.clearCookie('access_token').json({ message: 'Logout successful' });
+});
 
-// router.post('/forgot-password', (request: Request, response: Response) => {});
+router.post(
+	'/change-password',
+	authorizationMiddleware,
+	async (request: Request, response: Response) => {
+		const data = request.body as { password: string };
+
+		const session = (request as RequestWithSession).session;
+
+		const validatedSchema = (
+			await handleTryCatch(ChangePasswordSchema.parseAsync(data))
+		)[1] as ZodError;
+
+		if (validatedSchema?.errors?.length) {
+			validatedSchema.errors.forEach((issue) => {
+				response.status(400).json({ message: issue.message });
+			});
+		}
+
+		const error = (
+			await AuthUtils.changePassword({
+				...session.user,
+				password: data.password
+			})
+		)[1];
+
+		if (error) {
+			response.status(400).json({ message: 'Unexpected error' });
+		}
+
+		response.status(200).json({ message: 'Password changed' });
+	}
+);
 
 export default router;

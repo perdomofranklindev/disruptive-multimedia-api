@@ -180,4 +180,34 @@ export class AuthUtils {
 			expiresIn: '1h'
 		});
 	}
+
+	static async changePassword({
+		username,
+		email,
+		password
+	}: {
+		username?: string;
+		email?: string;
+		password: string;
+	}) {
+		if (!email && !username) {
+			throw new Error('Either email or username must be provided.');
+		}
+
+		const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+
+		const [updatedUser, error] = await handleTryCatch(
+			PRISMA.user.update({
+				where: {
+					username,
+					email
+				},
+				data: {
+					password: hashedPassword
+				}
+			})
+		);
+
+		return [updatedUser, error];
+	}
 }

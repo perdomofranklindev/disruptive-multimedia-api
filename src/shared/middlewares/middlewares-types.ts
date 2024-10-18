@@ -7,7 +7,7 @@ export interface Cookies {
 
 export interface MiddlewareSession {
 	session: {
-		user: Partial<User> | null;
+		user: Pick<User, 'email' | 'username'> | null;
 	};
 }
 
