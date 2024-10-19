@@ -1,8 +1,8 @@
 import { Response, NextFunction, Request } from 'express';
 import { Cookies, RequestWithSession } from './middlewares-types';
-import { JWT_SECRET } from '../environment';
+import { JWT_SECRET, REFRESH_SECRET } from '../environment';
 import { User } from '../types/generated';
-import jwt from 'jsonwebtoken';
+import jwt, { VerifyErrors } from 'jsonwebtoken';
 
 const _prepareUserSessionMiddleware = (
 	req: RequestWithSession,
@@ -46,31 +46,55 @@ export const authorizationMiddleware = (
 	next: NextFunction
 ) => _authorizationMiddleware(req as RequestWithSession, res, next);
 
-// function verifyToken(req, res, next) {
-//     const accessToken = req.cookies.accessToken;
-//     const refreshToken = req.cookies.refreshToken;
+export const _verifyToken = (
+	req: RequestWithSession,
+	res: Response,
+	next: NextFunction
+) => {
+	const accessToken = (req.cookies as Cookies).access_token;
+	const refreshToken = (req.cookies as Cookies).refresh_token;
 
-//     if (!accessToken || !refreshToken) {
-//         return res.status(401).send('Access token or refresh token is missing');
-//     }
+	if (!accessToken || !refreshToken) {
+		return res.status(401).send('Unauthorized');
+	}
 
-//     try {
-//         const decodedAccessToken = jwt.verify(accessToken, 'yourSecretKey');
-//         const decodedRefreshToken = jwt.verify(refreshToken, 'yourSecretKey');
+	try {
+		const decodedAccessToken = jwt.verify(accessToken, JWT_SECRET);
+		req.session.user = decodedAccessToken as Partial<User>;
+		next();
+	} catch (error) {
+		const err = error as VerifyErrors;
 
-//         if (decodedAccessToken.id !== decodedRefreshToken.id) {
-//             return res.status(401).send('Token mismatch');
-//         }
+		if (err.name !== 'TokenExpiredError') {
+			return res.status(401).send('Invalid access token');
+		}
 
-//         req.user = decodedAccessToken;
-//         next();
-//     } catch (error) {
-//         if (error.name === 'TokenExpiredError') {
-//             // Handle token expiration
-//             const newAccessToken = jwt.sign({ id: decodedRefreshToken.id }, 'yourSecretKey', { expiresIn: '1h' });
-//             res.cookie('accessToken', newAccessToken, { httpOnly: true, maxAge: 3600 * 1000 });
-//             return res.status(200).send('Access token refreshed');
-//         }
-//         return res.status(401).send('Invalid token');
-//     }
-// }
+		try {
+			const decodedRefreshToken = jwt.verify(
+				refreshToken,
+				REFRESH_SECRET
+			) as Partial<User>;
+			const newAccessToken = jwt.sign({ ...decodedRefreshToken }, JWT_SECRET, {
+				expiresIn: '1h'
+			});
+
+			res.cookie('access_token', newAccessToken, {
+				httpOnly: true,
+				maxAge: 3600 * 1000 // 1 hour
+			});
+
+			req.session.user = decodedRefreshToken;
+			return next();
+		} catch (refreshError) {
+			const refreshErr = refreshError as VerifyErrors;
+
+			if (refreshErr.name === 'TokenExpiredError') {
+				return res
+					.status(403)
+					.send('Refresh token expired, please log in again');
+			}
+
+			return res.status(401).send('Invalid refresh token');
+		}
+	}
+};

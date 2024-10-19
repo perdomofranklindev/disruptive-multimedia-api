@@ -127,7 +127,7 @@ router.post('/sign-in', async (request: Request, response: Response) => {
 		sameSite: 'strict',
 		maxAge: oneHour
 	});
-	response.cookie('refresh_access_token', refreshToken, {
+	response.cookie('refresh_token', refreshToken, {
 		httpOnly: true,
 		secure: ENVIRONMENT === 'production',
 		sameSite: 'strict',
@@ -141,7 +141,7 @@ router.post('/sign-in', async (request: Request, response: Response) => {
 
 router.post('/sign-out', (request: Request, response: Response) => {
 	response.clearCookie('access_token');
-	response.clearCookie('refresh_access_token');
+	response.clearCookie('refresh_token');
 	response.status(200).json({ message: 'Logout successful' });
 });
 
