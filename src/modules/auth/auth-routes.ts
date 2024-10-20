@@ -6,7 +6,11 @@ import { authMiddlewares } from '../../shared/middlewares/middlewares';
 import { handleTryCatch } from '../../shared/utils';
 import { ChangePasswordSchema } from './auth-schemas';
 import { ZodError } from 'zod';
-import { RequestWithSession } from '../../shared/middlewares/middlewares-types';
+import { RequestWithSession } from '../session/session-types';
+import {
+	COOKIE_ACCESS_TOKEN_MAX_AGE,
+	COOKIE_REFRESH_TOKEN_MAX_AGE
+} from '../session/session-constants';
 
 const router: Router = express.Router();
 
@@ -80,20 +84,16 @@ router.post('/sign-in', async (request: Request, response: Response) => {
 		username
 	});
 
-	const userExists = await AuthUtils.userExists({
-		email,
-		username
-	});
-	const userDoesNotExist = !userExists;
+	const userDoesNotExist = !user;
 
-	if (userDoesNotExist) {
-		response.status(400).json({
+	if (userDoesNotExist || user === null) {
+		return response.status(400).json({
 			message: 'User does not exist'
 		});
 	}
 
 	const isValidPassword = AuthUtils.isValidPassword({
-		currentPassword: user?.password || '',
+		currentPassword: user.password,
 		incomingPassword: password
 	});
 	const notValidPassword = !isValidPassword;
@@ -106,32 +106,23 @@ router.post('/sign-in', async (request: Request, response: Response) => {
 
 	// Generate tokens.
 
-	const token = AuthUtils.generateToken({
-		id: user?.id,
-		username,
-		email
-	});
-	const refreshToken = AuthUtils.generateRefreshToken({
-		id: user?.id,
-		username,
-		email
+	const [accessToken, refreshToken] = AuthUtils.generateTokens({
+		id: user.id,
+		username: user.username,
+		email: user.email
 	});
 
-	const oneHour = 1000 * 60 * 60;
-	const oneDay = oneHour * 24;
-	const sevenDays = oneDay * 7;
-
-	response.cookie('access_token', token, {
+	response.cookie('access_token', accessToken, {
 		httpOnly: true,
 		secure: ENVIRONMENT === 'production',
 		sameSite: 'strict',
-		maxAge: oneHour
+		maxAge: COOKIE_ACCESS_TOKEN_MAX_AGE
 	});
 	response.cookie('refresh_token', refreshToken, {
 		httpOnly: true,
 		secure: ENVIRONMENT === 'production',
 		sameSite: 'strict',
-		maxAge: sevenDays
+		maxAge: COOKIE_REFRESH_TOKEN_MAX_AGE
 	});
 
 	response.status(200).json({

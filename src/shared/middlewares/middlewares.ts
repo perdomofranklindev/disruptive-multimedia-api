@@ -1,8 +1,14 @@
 import { Response, NextFunction, Request } from 'express';
-import { Cookies, RequestWithSession } from './middlewares-types';
 import { JWT_SECRET, REFRESH_SECRET } from '../environment';
 import { User } from '../types/generated';
-import jwt, { VerifyErrors } from 'jsonwebtoken';
+import {
+	Cookies,
+	RequestWithSession,
+	SessionTokenPayload
+} from '../../modules/session/session-types';
+import { AuthUtils } from '../../modules/auth/auth-utils';
+import jwt, { TokenExpiredError } from 'jsonwebtoken';
+import { COOKIE_ACCESS_TOKEN_MAX_AGE } from '../../modules/session/session-constants';
 
 const prepareUserSession = (
 	req: RequestWithSession,
@@ -14,21 +20,9 @@ const prepareUserSession = (
 
 	try {
 		const data = jwt.verify(token, JWT_SECRET);
-		req.session.user = data as Partial<User>;
+		req.session.user = data as SessionTokenPayload;
 	} catch (err) {
 		// Handle error
-	}
-
-	next();
-};
-
-const checkAuthorization = (
-	req: RequestWithSession,
-	res: Response,
-	next: NextFunction
-) => {
-	if (!req.session.user) {
-		return res.status(401).json({ message: 'Unauthorized' });
 	}
 
 	next();
@@ -42,49 +36,57 @@ const verifyToken = (
 	const accessToken = (req.cookies as Cookies).access_token;
 	const refreshToken = (req.cookies as Cookies).refresh_token;
 
-	if (!accessToken || !refreshToken) {
+	if (!accessToken && !refreshToken) {
 		res.status(401).send('Unauthorized');
 	}
 
-	try {
-		const decodedAccessToken = jwt.verify(accessToken, JWT_SECRET);
-		req.session.user = decodedAccessToken as Partial<User>;
-		next();
-	} catch (error) {
-		const err = error as VerifyErrors;
-		const isOtherError = err.name !== 'TokenExpiredError';
-
-		if (isOtherError) {
-			res.status(401).send('Invalid access token');
-		}
-
+	const handleRefreshToken = () => {
 		try {
 			const decodedRefreshToken = jwt.verify(
 				refreshToken,
 				REFRESH_SECRET
-			) as Partial<User>;
-			const newAccessToken = jwt.sign({ ...decodedRefreshToken }, JWT_SECRET, {
-				expiresIn: '1h'
+			) as User;
+			const newAccessToken = AuthUtils.generateAccessToken({
+				id: decodedRefreshToken.id,
+				email: decodedRefreshToken.email,
+				username: decodedRefreshToken.username
 			});
-
 			res.cookie('access_token', newAccessToken, {
 				httpOnly: true,
-				maxAge: 3600 * 1000 // 1 hour
+				secure: process.env.NODE_ENV === 'production',
+				sameSite: 'strict',
+				maxAge: COOKIE_ACCESS_TOKEN_MAX_AGE
 			});
 
 			req.session.user = decodedRefreshToken;
-			next();
-		} catch (refreshError) {
-			const refreshErr = refreshError as VerifyErrors;
-			const refreshGotExpired = refreshErr.name === 'TokenExpiredError';
-
-			if (refreshGotExpired) {
-				res.status(403).send('Refresh token expired, please log in again');
+			return next();
+		} catch (err) {
+			if (err instanceof TokenExpiredError) {
+				return res
+					.status(401)
+					.send('Refresh token expired, please log in again');
 			}
+			return res.status(401).send('Invalid refresh token');
+		}
+	};
 
-			res.status(401).send('Invalid refresh token');
+	if (accessToken) {
+		try {
+			const decodedAccessToken = jwt.verify(
+				accessToken,
+				JWT_SECRET
+			) as SessionTokenPayload;
+			req.session.user = decodedAccessToken;
+			return next();
+		} catch (error) {
+			if (error instanceof TokenExpiredError) {
+				return handleRefreshToken();
+			}
+			return res.status(401).send('Invalid access token');
 		}
 	}
+
+	return handleRefreshToken();
 };
 
 // Simplify usage.
@@ -95,18 +97,12 @@ const prepareUserSessionMiddleware = (
 	next: NextFunction
 ) => prepareUserSession(req as RequestWithSession, res, next);
 
-const checkAuthorizationMiddleware = (
-	req: Request,
-	res: Response,
-	next: NextFunction
-) => checkAuthorization(req as RequestWithSession, res, next);
-
 const verifyTokenMiddleware = (
 	req: Request,
 	res: Response,
 	next: NextFunction
 ) => verifyToken(req as RequestWithSession, res, next);
 
-const authMiddlewares = [checkAuthorizationMiddleware, verifyTokenMiddleware];
+const authMiddlewares = [verifyTokenMiddleware];
 
 export { prepareUserSessionMiddleware, authMiddlewares };
