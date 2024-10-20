@@ -125,8 +125,11 @@ router.post('/sign-in', async (request: Request, response: Response) => {
 		maxAge: COOKIE_REFRESH_TOKEN_MAX_AGE
 	});
 
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	const { password: _, ...preparedUser } = user;
+
 	response.status(200).json({
-		...user
+		...preparedUser
 	});
 });
 
