@@ -8,7 +8,6 @@ import { prepareUserSessionMiddleware } from './shared/middlewares/middlewares';
 const app: Express = express();
 
 app.use(express.json());
-// eslint-disable-next-line
 app.use(cookieParser());
 app.use(prepareUserSessionMiddleware);
 
