@@ -2,7 +2,7 @@ import express, { Request, Response, Router } from 'express';
 import { User } from '@prisma/client';
 import { AuthUtils } from './auth-utils';
 import { ENVIRONMENT } from '../../shared/environment';
-import { authorizationMiddleware } from '../../shared/middlewares/middlewares';
+import { authMiddlewares } from '../../shared/middlewares/middlewares';
 import { handleTryCatch } from '../../shared/utils';
 import { ChangePasswordSchema } from './auth-schemas';
 import { ZodError } from 'zod';
@@ -147,7 +147,7 @@ router.post('/sign-out', (request: Request, response: Response) => {
 
 router.post(
 	'/change-password',
-	authorizationMiddleware,
+	authMiddlewares,
 	async (request: Request, response: Response) => {
 		const data = request.body as { password: string };
 
