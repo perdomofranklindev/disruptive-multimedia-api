@@ -36,6 +36,8 @@ const verifyToken = (
 	const accessToken = (req.cookies as Cookies).access_token;
 	const refreshToken = (req.cookies as Cookies).refresh_token;
 
+	// If those token don't exist, then the user is logout.
+
 	if (!accessToken && !refreshToken) {
 		res.status(401).send('Unauthorized');
 	}
@@ -70,6 +72,8 @@ const verifyToken = (
 		}
 	};
 
+	// Some browsers or app clients do not return expired cookies
+
 	if (accessToken) {
 		try {
 			const decodedAccessToken = jwt.verify(
@@ -85,6 +89,8 @@ const verifyToken = (
 			return res.status(401).send('Invalid access token');
 		}
 	}
+
+	// So we're assuming that the non-existing of the access token cookie as an expiration of it.
 
 	return handleRefreshToken();
 };
